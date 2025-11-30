@@ -1,9 +1,10 @@
 package main
 
 import (
-	"errors"
+	"FoodDelivery/module/restaurant/transport/ginrestaurant"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -19,20 +20,14 @@ type Restaurant struct {
 type RestaurantUpdate struct {
 	Name *string `json:"name" gorm:"column:name;"`
 }
-type Student struct {
-	Id   string  `json:"id" gorm:"column:ID;primary_key;"`
-	Name string  `json:"full_name" gorm:"column:FullName;"`
-	GPA  float64 `json:"gpa" gorm:"column:GPA;"`
-}
 
 func (RestaurantUpdate) TableName() string { return Restaurant{}.TableName() }
 func (Restaurant) TableName() string       { return "restaurants" }
 
-func (Student) TableName() string { return "student" }
 func main() {
-	//dsn := os.Getenv("MYSQL_MANAGEMENT")
+	dsn := os.Getenv("MYSQL_MANAGEMENT")
 	//dsn := "food_delivery:19e5a718a54a9fe0559dfbce6908@tcp(127.0.0.1:3307)/food_delivery?charset=utf8mb4&parseTime=true&Local"
-	dsn := "root:1607@tcp(127.0.0.1:3306)/javasql?charset=utf8mb4&parseTime=true&loc=Local" // workbench
+	//dsn := "root:1607@tcp(127.0.0.1:3306)/javasql?charset=utf8mb4&parseTime=true&loc=Local" // workbench
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -71,25 +66,10 @@ func main() {
 	})
 	v1 := r.Group("/v1")
 	restaurants := v1.Group("/restaurants")
-	restaurants.POST("", func(c *gin.Context) {
-		var data Restaurant
-		if err := c.ShouldBind(&data); err != nil { // request body
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Lỗi rồi bạn ơi!" + err.Error(),
-			})
-			return
-		}
-		if db.Create(&data).Error != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Thua",
-			})
-		} else {
-			c.JSON(http.StatusCreated, gin.H{
-				"data": data,
-			})
-		}
 
-	})
+	//Create
+	restaurants.POST("", ginrestaurant.CreateRestaurant(db))
+
 	restaurants.GET("/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		var data Restaurant
@@ -186,115 +166,5 @@ func main() {
 			"message": "Delete successfully",
 		})
 	})
-	students := v1.Group("/students")
-	students.POST("", func(c *gin.Context) {
-		var data Student
-		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Add new student fall",
-			})
-		}
-		if db.Create(&data).Error != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Add new student un success",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-
-	})
-	students.PUT("", func(c *gin.Context) {
-		var data Student
-		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Update student un success",
-			})
-			return
-		}
-		id := data.Id
-		var existById Student
-		if err := db.Where("ID = ?", id).First(&existById).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				c.JSON(http.StatusNotFound, gin.H{
-					"message": "Id student not found",
-				})
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Lỗi truy vấn cơ sở dữ liệu: " + err.Error(),
-				})
-			}
-			return
-
-		}
-		if err := db.Save(&data).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Update student success",
-			"data":    data,
-		})
-	})
-	students.GET("/:id", func(c *gin.Context) {
-		var data Student
-		id := c.Param("id")
-		if err := db.Where("id = ?", id).First(&data).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Id student (" + id + ") not found",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Find by ID",
-			"data":    data,
-		})
-
-	})
-	students.DELETE("/:id", func(c *gin.Context) {
-		id := c.Param("id")
-		result := db.Table(Student{}.TableName()).Where("ID = ?", id).Delete(nil)
-		if result.Error != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "error",
-			})
-			return
-		}
-		if result.RowsAffected == 0 {
-			c.Status(404)
-			return
-		}
-		c.Status(204)
-	})
-	students.GET("", func(c *gin.Context) {
-		type Paging struct {
-			Page  int `json:"page" form:"page"`
-			Limit int `json:"limit" form:"limit"`
-		}
-		var pagingData Paging
-		if err := c.ShouldBind(&pagingData); err != nil {
-			c.Status(500)
-			return
-		}
-		if pagingData.Limit <= 0 {
-			pagingData.Limit = 3
-		}
-		if pagingData.Page <= 0 {
-			pagingData.Page = 1
-		}
-		offset := (pagingData.Page - 1) * pagingData.Limit
-		var list []Student
-		db.Offset(offset).Limit(pagingData.Limit).Find(&list)
-		c.JSON(http.StatusOK, gin.H{
-			"limit": pagingData.Limit,
-			"page":  pagingData.Page,
-			"data":  list,
-		})
-
-	})
-
 	r.Run(":8080")
 }
