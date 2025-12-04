@@ -19,7 +19,7 @@ func NewSQLStore(db *gorm.DB) *sqlStore {
 // CreateRestaurant Kế thừa từ bên business (repository)
 func (s *sqlStore) Create(context context.Context, data *restaurantmodel.RestaurantCreate) error {
 	if err := s.db.Create(&data).Error; err != nil {
-		return err
+		return common.ErrDB(err)
 	}
 	return nil
 }

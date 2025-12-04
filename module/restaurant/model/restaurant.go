@@ -10,6 +10,7 @@ type RestaurantTypeEnum string
 
 const Normal RestaurantTypeEnum = "normal"
 const Premium RestaurantTypeEnum = "premium"
+const EntityName = "restaurant"
 
 type Restaurant struct {
 	common.SQLModel `json:",inline"`
@@ -28,6 +29,7 @@ type RestaurantCreate struct {
 	Address string `json:"address" gorm:"address"`
 }
 
+// handle error
 func (data *RestaurantCreate) Validate() error {
 	data.Name = strings.TrimSpace(data.Name)
 	if data.Name == "" {

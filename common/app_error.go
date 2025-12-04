@@ -83,3 +83,6 @@ func ErrCannotListEntity(entity string, err error) *AppError {
 func ErrCannotDeletedEntity(entity string, err error) *AppError {
 	return NewCustomError(err, "cannot delete entity "+entity, "SERVER_ERROR")
 }
+func ErrCreateNewEntity(entity string, err error) *AppError {
+	return NewCustomError(err, "Cannot create new entity "+entity, "SERVER_ERROR")
+}
