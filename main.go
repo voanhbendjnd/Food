@@ -2,6 +2,7 @@ package main
 
 import (
 	appctx "FoodDelivery/component"
+	"FoodDelivery/middleware"
 	"FoodDelivery/module/restaurant/transport/ginrestaurant"
 	"log"
 	"net/http"
@@ -39,14 +40,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	r := gin.Default()                    // lấy server
+	appContext := appctx.NewAppContext(db)
+
+	r := gin.Default() // lấy server
+	db = db.Debug()
+	r.Use(middleware.Recover(appContext))
 	r.GET("/ping", func(c *gin.Context) { // register link on server with /ping
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Chạy được rồi",
 		})
 	})
-	db = db.Debug()
-	appContext := appctx.NewAppContext(db)
 	v1 := r.Group("/v1")
 	restaurants := v1.Group("/restaurants")
 
