@@ -3,6 +3,7 @@ module FoodDelivery
 go 1.25
 
 require (
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect

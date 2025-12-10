@@ -31,7 +31,7 @@ func (s *sqlStore) Delete(ctx context.Context, id int) error {
 }
 func (s *sqlStore) SoftDelete(ctx context.Context, id int) error {
 	if err := s.db.Table(restaurantmodel.Restaurant{}.TableName()).Where("id = ?", id).Updates(map[string]interface{}{"status": 0}).Error; err != nil {
-		return err
+		return common.ErrDB(err)
 	}
 	return nil
 }
@@ -44,7 +44,10 @@ func (s *sqlStore) FindWithCondition(
 ) (*restaurantmodel.Restaurant, error) {
 	var data restaurantmodel.Restaurant
 	if err := s.db.Where(cdt).First(&data).Error; err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return nil, common.ResourceNotFound
+		}
+		return nil, common.ErrDB(err)
 	}
 	return &data, nil
 }
@@ -63,11 +66,11 @@ func (s *sqlStore) FindAll(
 		}
 	}
 	if err := db.Count(&paging.Total).Error; err != nil {
-		return nil, err
+		return nil, common.ErrDB(err)
 	}
 	offset := (paging.Page - 1) * paging.Limit
 	if err := db.Offset(offset).Limit(paging.Limit).Order("id desc").Find(&data).Error; err != nil {
-		return nil, err
+		return nil, common.ErrDB(err)
 	}
 	return data, nil
 }

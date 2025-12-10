@@ -86,3 +86,5 @@ func ErrCannotDeletedEntity(entity string, err error) *AppError {
 func ErrCreateNewEntity(entity string, err error) *AppError {
 	return NewCustomError(err, "Cannot create new entity "+entity, "SERVER_ERROR")
 }
+
+var ResourceNotFound = errors.New("resource not found")

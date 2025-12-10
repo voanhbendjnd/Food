@@ -17,8 +17,7 @@ func CreateRestaurant(ctx appctx.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var data restaurantmodel.RestaurantCreate
 		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, common.ErrInvalidRequest(err))
-			return
+			panic(err)
 		}
 		store := restaurantstorage.NewSQLStore(ctx.GetMaiDBConnection())
 		biz := business.RestaurantBusiness(store)
@@ -36,18 +35,12 @@ func DeleteRestaurant(ctx appctx.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Id must be number!",
-			})
-			return
+			panic(err)
 		}
 		store := restaurantstorage.NewSQLStore(ctx.GetMaiDBConnection())
 		biz := business.RestaurantBusiness(store)
 		if err := biz.DeleteRestaurant(c.Request.Context(), id); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
+			panic(err)
 		}
 		c.JSON(http.StatusOK, common.SimpleSucessResponse(true))
 	}
