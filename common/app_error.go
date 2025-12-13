@@ -69,7 +69,7 @@ func ErrInvalidRequest(err error) *AppError {
 	return NewErrorResponse(err, "invalid request", err.Error(), "ErrInvalidRequest")
 }
 
-func ErrINternal(err error) *AppError {
+func ErrInternal(err error) *AppError {
 	return NewFullErrorResponse(http.StatusInternalServerError, err, "something went wrong in the server", err.Error(), "ErrInternal")
 }
 
@@ -88,3 +88,7 @@ func ErrCreateNewEntity(entity string, err error) *AppError {
 }
 
 var ResourceNotFound = errors.New("resource not found")
+
+func ErrEntityNotFound(entity string, err error) *AppError {
+	return NewCustomError(err, entity+" not found", "404")
+}

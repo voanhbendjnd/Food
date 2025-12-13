@@ -15,6 +15,7 @@ type restaurantRepository interface {
 		filter *restaurantmodel.Filter,
 		paging *common.Paging,
 		moreKeys ...string) ([]restaurantmodel.Restaurant, error)
+	Update(ctx context.Context, data *restaurantmodel.RestaurantDTO) (*restaurantmodel.ResRestaurant, error)
 }
 
 // (Cầu nối)

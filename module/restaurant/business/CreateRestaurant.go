@@ -7,14 +7,13 @@ import (
 )
 
 // CreateRestaurant login interface
-func (biz *restaurantBusiness) CreateRestaurant(ctx context.Context, data *restaurantmodel.RestaurantCreate) error {
+func (biz *restaurantBusiness) CreateRestaurant(ctx context.Context, data *restaurantmodel.RestaurantCreate) {
 
 	if err := data.Validate(); err != nil {
-		return common.ErrInvalidRequest(err)
+		panic(common.ErrInvalidRequest(err))
 	}
 	if err := biz.store.Create(ctx, data); err != nil {
-		return common.ErrCreateNewEntity(restaurantmodel.EntityName, err)
+		panic(common.ErrCreateNewEntity(restaurantmodel.EntityName, err))
 	}
-	return nil
 
 }

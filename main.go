@@ -3,12 +3,16 @@ package main
 import (
 	appctx "FoodDelivery/component"
 	"FoodDelivery/middleware"
+	"FoodDelivery/module/restaurant/business"
+	restaurantstorage "FoodDelivery/module/restaurant/storage"
 	"FoodDelivery/module/restaurant/transport/ginrestaurant"
+	"FoodDelivery/module/user/controller"
+	userrepository "FoodDelivery/module/user/repository"
+	userservice "FoodDelivery/module/user/service"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
 
+	// "os"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
@@ -32,9 +36,9 @@ func main() {
 	if err != nil {
 		log.Fatal("Error lading .env")
 	}
-	dsn := os.Getenv("MYSQL_MANAGEMENT")
+	// dsn := os.Getenv("MYSQL_MANAGEMENT")
 	// dsn := "food_delivery:19e5a718a54a9fe0559dfbce6908@tcp(127.0.0.1:3307)/food_delivery?charset=utf8mb4&parseTime=true&Local"
-	//dsn := "root:1607@tcp(127.0.0.1:3306)/javasql?charset=utf8mb4&parseTime=true&loc=Local" // workbench
+	dsn := "root:1607@tcp(127.0.0.1:3306)/fooddelivery?charset=utf8mb4&parseTime=true&loc=Local" // workbench
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -52,60 +56,71 @@ func main() {
 	})
 	v1 := r.Group("/v1")
 	restaurants := v1.Group("/restaurants")
+	users := v1.Group("/users")
 
-	//Create
-	restaurants.POST("", ginrestaurant.CreateRestaurant(appContext))
+	restaurantRepository := restaurantstorage.NewSQLStore(db)
+	restaurantService := business.RestaurantBusiness(restaurantRepository)
+	restaurants.POST("", ginrestaurant.CreateRestaurant(restaurantService))
+	restaurants.GET("/:id", ginrestaurant.FindRestaurant(restaurantService))
+	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurantSoftDelete(restaurantService))
+	// restaurants.GET("/:ids", func(c *gin.Context) {
+	// 	id, err := strconv.Atoi(c.Param("ids"))
+	// 	var data Restaurant
+	// 	if err != nil {
+	// 		c.JSON(http.StatusBadRequest, gin.H{
+	// 			"message": "Id must be a number",
+	// 		})
+	// 		return
+	// 	}
+	// 	if db.Where("id = ?", id).First(&data).Error != nil {
+	// 		c.JSON(http.StatusBadRequest, gin.H{
+	// 			"message": "Id restaurant (" + c.Param("id") + ") not found!",
+	// 		})
+	// 		return
+	// 	}
+	// 	c.JSON(http.StatusOK, gin.H{
+	// 		"data": data,
+	// 	})
 
-	restaurants.GET("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-		var data Restaurant
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Id must be a number",
-			})
-			return
-		}
-		if db.Where("id = ?", id).First(&data).Error != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Id restaurant (" + c.Param("id") + ") not found!",
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-
-	})
+	// })
+	restaurants.PATCH("", ginrestaurant.UpdateRestaurant(restaurantService))
 	restaurants.GET("", ginrestaurant.FindAll(appContext))
-	restaurants.PATCH("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Id must be a number",
-			})
-			return
-		}
-		var dataUpdate Restaurant
-		if err := c.ShouldBind(&dataUpdate); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		var findById Restaurant
-		res := db.Where("id = ?", id).Updates(&dataUpdate)
-		if res.Error != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": res.Error.Error(),
-			})
-			return
-		}
-		db.Where("id = ?", id).First(&findById)
-		c.JSON(http.StatusOK, gin.H{
-			"Message": "Update successfully",
-			"data":    findById,
-		})
-	})
-	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(appContext))
+	// restaurants.PATCH("/:id", func(c *gin.Context) {
+	// 	id, err := strconv.Atoi(c.Param("id"))
+	// 	if err != nil {
+	// 		c.JSON(http.StatusBadRequest, gin.H{
+	// 			"error": "Id must be a number",
+	// 		})
+	// 		return
+	// 	}
+	// 	var dataUpdate Restaurant
+	// 	if err := c.ShouldBind(&dataUpdate); err != nil {
+	// 		c.JSON(http.StatusBadRequest, gin.H{
+	// 			"error": err.Error(),
+	// 		})
+	// 		return
+	// 	}
+	// 	var findById Restaurant
+	// 	res := db.Where("id = ?", id).Updates(&dataUpdate)
+	// 	if res.Error != nil {
+	// 		c.JSON(http.StatusBadRequest, gin.H{
+	// 			"error": res.Error.Error(),
+	// 		})
+	// 		return
+	// 	}
+	// 	db.Where("id = ?", id).First(&findById)
+	// 	c.JSON(http.StatusOK, gin.H{
+	// 		"Message": "Update successfully",
+	// 		"data":    findById,
+	// 	})
+	// })
+	// restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(appContext))
+
+	// User
+	userRepository := userrepository.NewSQLStore(db)
+	userService := userservice.UserService(userRepository)
+	users.POST("", controller.CreateUser(userService))
+
 	r.Run(":8080")
+
 }
