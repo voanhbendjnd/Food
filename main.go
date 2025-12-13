@@ -120,7 +120,7 @@ func main() {
 	userRepository := userrepository.NewSQLStore(db)
 	userService := userservice.UserService(userRepository)
 	users.POST("", controller.CreateUser(userService))
-
+	users.PATCH("", controller.UpdateUser(userService))
 	r.Run(":8080")
 
 }

@@ -4,13 +4,15 @@ import (
 	"FoodDelivery/common"
 	usermodel "FoodDelivery/module/user/model"
 	"context"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type UserCreateServive interface {
 	CreateUser(ctx context.Context, dto *usermodel.UserDTO)
+}
+type UserUpdateService interface {
+	UpdateUser(ctx context.Context, dto *usermodel.UserDTO) *usermodel.ResUser
 }
 
 func CreateUser(service UserCreateServive) gin.HandlerFunc {
@@ -24,5 +26,16 @@ func CreateUser(service UserCreateServive) gin.HandlerFunc {
 		}
 		service.CreateUser(c.Request.Context(), &userDTO)
 		c.JSON(http.StatusOK, common.SimpleSucessResponse(true))
+	}
+}
+
+func UpdateUser(service UserUpdateService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var userDTO usermodel.UserDTO
+		if err := c.ShouldBind(&userDTO); err != nil {
+			panic(common.ErrInvalidRequest(err))
+		}
+		res := service.UpdateUser(c.Request.Context(), &userDTO)
+		c.JSON(http.StatusOK, common.SimpleSucessResponse(res))
 	}
 }
