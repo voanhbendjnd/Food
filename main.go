@@ -121,6 +121,8 @@ func main() {
 	userService := userservice.UserService(userRepository)
 	users.POST("", controller.CreateUser(userService))
 	users.PATCH("", controller.UpdateUser(userService))
+	users.GET("/:id", controller.FindUserByID(userService))
+	users.GET("", controller.FetchAll(userService))
 	r.Run(":8080")
 
 }

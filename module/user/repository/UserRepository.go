@@ -51,3 +51,41 @@ func (s *sqlStore) Update(ctx context.Context, user *usermodel.User) (*usermodel
 	return &userDB, nil
 
 }
+
+func (s *sqlStore) FindWithCondition(ctx context.Context, cdt map[string]interface{}, moreKeys ...string) (*usermodel.User, error) {
+	var user usermodel.User
+	if err := s.db.Where(cdt).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, common.ResourceNotFound
+		}
+		return nil, common.ErrDB(err)
+	}
+	return &user, nil
+}
+
+func (s *sqlStore) FindAll(ctx context.Context, filter *usermodel.Filter, paging *common.Paging, moreKeys ...string) ([]usermodel.User, error) {
+	var users []usermodel.User
+	db := s.db.Table(usermodel.User{}.TableName())
+	if f := filter; f != nil {
+		if f.Address != "" {
+			db = db.Where("address like ?", "%"+f.Address+"%")
+		}
+		if f.Id > 0 {
+			db = db.Where("id = ?", f.Id)
+		}
+		if f.Email != "" {
+			db = db.Where("email like ?", "%"+f.Email+"%")
+		}
+		if f.Name != "" {
+			db = db.Where("name like ?", "%"+f.Name+"%")
+		}
+	}
+	if err := db.Count(&paging.Total).Error; err != nil {
+		return nil, common.ErrDB(err)
+	}
+	offset := (paging.Page - 1) * paging.Limit
+	if err := db.Offset(offset).Limit(paging.Limit).Order("id desc").Find(&users).Error; err != nil {
+		return nil, common.ErrDB(err)
+	}
+	return users, nil
+}
